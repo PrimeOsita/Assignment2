@@ -1,0 +1,51 @@
+const { equipmentTable } = require('../models/index');
+const cloudinary = require('../middlewares/cloudinary');
+const fs = require('fs');
+
+exports.createEquipment = async (req, res) => {
+  try {
+    if (!req.files || !req.files.images) {
+      return res.status(400).json({ message: "Images are required" });
+    }
+
+    const files = req.files;
+    const filePaths = files.map(file => file.path);
+
+    const uploadPromises = filePaths.map(path =>
+      cloudinary.uploader.upload(path)
+    );
+
+    const uploadResults = await Promise.all(uploadPromises);
+
+    const secureUrls = uploadResults.map(e => e.secure_url);
+
+    files.forEach(file => {
+      if (fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
+      }
+    });
+
+    const { equipmentName, price, expirationDate, status } = req.body;
+    const { organizationId } = req.params;
+
+    const newEquipment = await equipmentTable.create({
+      equipmentName,
+      price,
+      expirationDate: new Date(expirationDate),
+      status,
+      organizationId,
+      images: secureUrls 
+    });
+
+    res.status(201).json({
+      message: "Equipment created successfully",
+      data: newEquipment
+    });
+
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({
+      message: "Something went wrong"
+    });
+  }
+};
