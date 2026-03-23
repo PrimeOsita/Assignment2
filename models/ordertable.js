@@ -27,7 +27,7 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: DataTypes.UUIDV4
       },
     orderType: DataTypes.STRING,
-    images: DataTypes.TEXT,
+    images: DataTypes.JSON,
     amount: DataTypes.INTEGER,
     status: DataTypes.ENUM('pending', 'processing', 'completed'),
     staffName: DataTypes.STRING,

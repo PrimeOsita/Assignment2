@@ -30,7 +30,7 @@ module.exports = (sequelize, DataTypes) => {
     price: DataTypes.INTEGER,
     expirationDate: DataTypes.DATE,
     status: DataTypes.ENUM('good', 'bad', 'new'),
-    images: DataTypes.TEXT,
+    images: DataTypes.JSON,
     organizationId: DataTypes.UUID
   }, {
     sequelize,
