@@ -1,0 +1,43 @@
+const { deliveryTable, staffTable, orderTable } = require('../models');
+exports.createDelivery = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const findOrder = await orderTable.findByPk(orderId);
+    if (!findOrder) {
+      return res.status(404).json({
+        message: `Order with ID: ${orderId} not found`
+      });
+    }
+
+    const { processedBy, status, clothType } = req.body;
+    const findStaff = await staffTable.findOne({
+      where: { staffName: processedBy },
+      clothType
+    });
+
+    if (!findStaff) {
+      return res.status(404).json({
+        message: `Staff with name ${processedBy} not found`
+      });
+    }
+
+    const newDelivery = await deliveryTable.create({
+      processedBy,
+      status,
+      clothType: findOrder.clothType,
+      orderId,
+      staffId: findStaff.staffId 
+    });
+
+    res.status(201).json({
+      message: "Delivery created successfully",
+      data: newDelivery
+    });
+
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({
+      message: "Something went wrong"
+    });
+  }
+};

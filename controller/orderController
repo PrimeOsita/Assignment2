@@ -1,0 +1,57 @@
+const { orderTable, staffTable } = require('../models');
+const cloudinary = require('../middlewares/cloudinary');
+const fs = require('fs');
+
+exports.createOrder = async (req, res) => {
+  try {
+    const { staffId } = req.params;
+
+    const findStaff = await staffTable.findByPk(staffId);
+    if (!findStaff) {
+      return res.status(404).json({
+        message: `Staff with ID: ${staffId} not found`
+      });
+    }
+    const files = req.files;
+    if (!files || files.length === 0) {
+      return res.status(400).json({
+        message: "Images are required"
+      });
+    }
+
+    const uploadPromises = files.map(file =>
+      cloudinary.uploader.upload(file.path)
+    );
+
+    const uploadResults = await Promise.all(uploadPromises);
+    const imageUrls = uploadResults.map(r => r.secure_url);
+
+    files.forEach(file => {
+      if (fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
+      }
+    });
+
+    const { orderType, amount, status } = req.body;
+
+    const newOrder = await orderTable.create({
+      orderType,
+      images: JSON.stringify(imageUrls),
+      amount,
+      staffName: findStaff.staffName,
+      status,
+      staffId: findStaff.staffId
+    });
+
+    res.status(201).json({
+      message: "Order created successfully",
+      data: newOrder
+    });
+
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({
+      message: "Something went wrong"
+    });
+  }
+};
